@@ -1,3 +1,6 @@
+# import sys
+# sys.path.append('../')
+import signal
 from local_settings import NICKNAME, TOKEN, CHANNEL
 import socket
 import re
@@ -6,7 +9,7 @@ server = 'irc.chat.twitch.tv'
 port = 6667
 nickname = NICKNAME
 token = TOKEN
-channel = CHANNEL
+channel = "worldofwarships"
 
 sock = socket.socket()
 sock.connect((server, port))
@@ -15,6 +18,14 @@ sock.send(f"PASS {token}\n".encode('utf-8'))
 sock.send(f"NICK {nickname}\n".encode('utf-8'))
 sock.send(f"JOIN {channel}\n".encode('utf-8'))
 
+# Will clean up and close sockets on CTRL-C
+def keyboardInterruptHandler(signal, frame):
+  print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
+  sock.close()
+  print("Socket closed\n\n")
+  exit(0)
+
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 while True:
   resp = sock.recv(2048).decode('utf-8')
@@ -34,7 +45,3 @@ while True:
     # print(f"Username: {username}\t Message: {message}\n")
     # res = re.split('[:]', resp)
     # print(res)
-
-  resp = None
-
-# sock.close()

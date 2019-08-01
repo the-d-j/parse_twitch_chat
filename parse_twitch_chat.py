@@ -6,10 +6,12 @@ import socket
 import re
 
 server = 'irc.chat.twitch.tv'
-port = 6667
+# port = 6667
+port = 80
 nickname = NICKNAME
 token = TOKEN
-channel = "worldofwarships"
+channel = CHANNEL
+
 
 sock = socket.socket()
 sock.connect((server, port))
@@ -26,22 +28,26 @@ def keyboardInterruptHandler(signal, frame):
   exit(0)
 
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
+print("Press <CTRL+C> to end program and close sockets\n")
 
 while True:
   resp = sock.recv(2048).decode('utf-8')
+  print(resp)
 
   if resp.startswith('PING'):
     sock.send("PONG\n".encode('utf-8'))
     print('sent PONG')
   
-  # elif resp.startswith(':tmi.twitch.tv'):
-  #   print('caught :tmi.twitch.tv')
+  elif resp.startswith(':tmi.twitch.tv'):
+    print('caught :tmi.twitch.tv')
   
 
   elif len(resp) > 0:
     print('response:\n', resp)
+    
     # username, channel, message = re.search(':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)', resp).groups()
     # username, message = re.split('[:]', resp)
     # print(f"Username: {username}\t Message: {message}\n")
     # res = re.split('[:]', resp)
     # print(res)
+    # print(sock.getpeername())

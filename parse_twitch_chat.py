@@ -12,8 +12,14 @@ port = 80
 nickname = NICKNAME
 token = TOKEN
 channel = CHANNEL
-RAFFLE = False
 
+RAFFLE = False   # is a raffle occurring now?
+ENTERED_RAFFLE = False  # have I entered the raffle?
+START_TIME = 0   # start time of raffle detection
+CURRENT_TIME = 0 # used to determine elapsed time of raffle
+COUNT = 0  # Number of raffle entries - used to verify raffle is actually occurring (mitigate false starts)
+
+# pattern to match for username, channel, message
 reg = r':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)'
 
 sock = socket.socket()
@@ -53,8 +59,6 @@ def check_for_raffle(message):
     return True
   return False
 
-count=0
-ticks=0
 while True:
   resp = sock.recv(2048).decode('utf-8')
   # print(resp)
@@ -69,43 +73,31 @@ while True:
   
 
   elif len(resp) > 0:
-    # print('message:\n', resp)
-    # username=msg[msg.find(':')+1:msg.find('!')]
-    # print(username)
-    # privmsg = msg.split(':')
-    # print(privmsg)
-    # username, channel, message = re.search(':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)', msg).groups()
-    # print(re.search(':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)', msg))
-    # res = re.search(':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)', msg)
-    # print(res)
-    
-    # res = re.match(reg, resp)
-    # if res:
-      
-    #   print(res.groups())
-    #   username, channel, message = res.groups()
-    #   print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
-    
     username, channel, message = parse_message(resp)
     print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
 
+    # Raffle word detected?
     if check_for_raffle(message):
-      if not RAFFLE:
+      if ENTERED_RAFFLE:
+        elapsed_time = CURRENT_TIME - START_TIME
+        if elapsed_time > 900: # 15min
+          RAFFLE = False
+          ENTERED_RAFFLE = False
+          COUNT = 0
+      
+      elif not RAFFLE:
         RAFFLE = True
-        time_start = time.time() # in ticks
-        count+=1
-    
+        START_TIME = time.time() 
+        COUNT+=1
       
-      print('raffle message!')
-      print(ticks, count)
+      else:
+        CURRENT_TIME = time.time()
+        COUNT+=1
+        elapsed_time = CURRENT_TIME - START_TIME
+        # if (COUNT > 40) and (elapsed_time > 40):
+        if (COUNT > 10) and (elapsed_time > 15):
+          # Send message works!
+          sock.send("PRIVMSG #biff_waverider :!raffle\n".encode('utf-8'))
+          print("Raffle entered!")
+          ENTERED_RAFFLE = True 
     
-      
-
-
-    # if (res.group()):
-    #   print(res.group())
-    # username, message = re.split('[:]', msg)
-    # print(f"Username: {username}\t Message: {message}\n")
-    # res = re.split('[:]', msg)
-    # print(res)
-    # print(sock.getpeername())

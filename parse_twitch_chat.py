@@ -1,5 +1,3 @@
-# import sys
-# sys.path.append('../')
 import signal
 from local_settings import NICKNAME, TOKEN, CHANNEL
 import socket

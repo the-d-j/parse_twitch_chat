@@ -27,6 +27,7 @@ class Bot:
     self.entered_raffle_time = 0
     self.raffle_start_time = 0
     self.current_time = 0
+    self.elapsed_time = 0
     self.count = 0
     self.responses = ["hey!", "yes!", "cool!", "bam!", "thanks!" "woohoo!", "ah yeah", "noice!", "sweet", "yup yup"]
   
@@ -41,8 +42,8 @@ class Bot:
   ### END INIT ###
   
   def status(self):
-    print("Statuses:\nRAFFLE_STARTED:  {}\nENTERED_RAFFLE:  {}\nENTERED_RAFFLE_TIME:  {}\nRAFFLE_START_TIME:  {}\nCURRENT_TIME:  {}\nCOUNT:  {}\n"
-      .format(self.raffle_started, self.entered_raffle, time.ctime(self.entered_raffle_time),
+    print("Statuses for channel {}:\nRAFFLE_STARTED:  {}\nENTERED_RAFFLE:  {}\nENTERED_RAFFLE_TIME:  {}\nRAFFLE_START_TIME:  {}\nCURRENT_TIME:  {}\nCOUNT:  {}\n"
+      .format(self.channel, self.raffle_started, self.entered_raffle, time.ctime(self.entered_raffle_time),
       time.ctime(self.raffle_start_time), time.ctime(self.current_time), self.count))
     return
 
@@ -74,6 +75,36 @@ class Bot:
       print('*** GIVEAWAY WON! ***\t{}'.format(time.ctime()))
     return
 
+  def check_for_raffle(self, message):
+    if message.startswith('!raffle'):
+      if not self.raffle_started:
+        self.raffle_started = True
+        self.raffle_start_time = time.time()
+        self.count = self.count + 1
+      else:
+        self.current_time = time.time()
+        self.count = self.count + 1
+        self.elapsed_time = self.current_time - self.raffle_start_time
+    return
+
+  def enter_raffle(self):
+    msg = "PRIVMSG " + self.channel + " :!raffle\n"
+    self.sock.send(msg.encode('utf-8'))
+    self.entered_raffle = True
+    self.entered_raffle_time = time.time()
+    print("* Raffle entered! *\t{}".format(time.ctime(self.entered_raffle_time)))
+    return
+
+  def reset(self):
+    self.raffle_started = False
+    self.raffle_start_time = None
+    self.entered_raffle = False
+    self.entered_raffle_time = None
+    self.current_time = None
+    self.count = 0
+    print("Settings reset; raffle over (or timed out)\n\n")
+    return
+
 ### END class Bot ###
 
 def main():
@@ -94,6 +125,20 @@ def main():
       username, channel, message = obj.parse_message(resp)
       print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
 
+      obj.check_for_raffle(resp)
+      
+      if (obj.count > 40) and (obj.elapsed_time > 80) and not obj.entered_raffle:
+        obj.entered_raffle()
+
+    # Due to socket blocking, this will only run when a resp is received
+    if obj.entered_raffle:
+      obj.current_time = time.time()
+      obj.elapsed_time = obj.current_time - obj.raffle_start_time
+      
+      # Has it been 15min since the raffle began?
+      # If so, reset for next raffle
+      if obj.elapsed_time > 900: # 15min
+        obj.reset()
 
     obj.status()
 

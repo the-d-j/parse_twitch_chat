@@ -1,4 +1,4 @@
 .gitignore
-local_settings.py
+local_settings.*
 /__pycache__/
 /.vscode/

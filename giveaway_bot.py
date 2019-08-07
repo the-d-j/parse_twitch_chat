@@ -47,16 +47,16 @@ class Bot:
       time.ctime(self.raffle_start_time), time.ctime(self.current_time), self.count))
     return
 
-  def parse_message(self, msg):
+  def parse_message(self, resp):
     # regex pattern to match for username, channel, message
     reg = r':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*) :(.*)'
 
     # needed to assign vars to some value else it crashes on NoneType b/c send.sock() blocking...
-    username = None
-    channel = None
-    message = None
+    username = 'none'
+    channel = 'none'
+    message = 'none'
 
-    res = re.match(reg, msg)
+    res = re.match(reg, resp)
     if res:
       username, channel, message = res.groups()
     return username, channel, message
@@ -82,6 +82,8 @@ class Bot:
         self.raffle_start_time = time.time()
         self.count = self.count + 1
       else:
+        print("in check_for_raffle\n\n")
+
         self.current_time = time.time()
         self.count = self.count + 1
         self.elapsed_time = self.current_time - self.raffle_start_time
@@ -97,16 +99,18 @@ class Bot:
 
   def reset(self):
     self.raffle_started = False
-    self.raffle_start_time = None
+    self.raffle_start_time = 0
     self.entered_raffle = False
-    self.entered_raffle_time = None
-    self.current_time = None
+    self.entered_raffle_time = 0
+    self.current_time = 0
     self.count = 0
     print("Settings reset; raffle over (or timed out)\n\n")
     return
 
 ### END class Bot ###
 
+# TODO: Check for winner
+# TODO: Incorporate json for multiple giveaways
 def main():
   signal.signal(signal.SIGINT, keyboardInterruptHandler)
   print("Press <CTRL+C> to end program and close sockets\n")
@@ -125,10 +129,11 @@ def main():
       username, channel, message = obj.parse_message(resp)
       print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
 
-      obj.check_for_raffle(resp)
+      obj.check_for_raffle(message)
       
-      if (obj.count > 40) and (obj.elapsed_time > 80) and not obj.entered_raffle:
-        obj.entered_raffle()
+      # if (obj.count > 40) and (obj.elapsed_time > 80) and not obj.entered_raffle:
+      if (obj.count > 10) and (obj.elapsed_time > 20) and not obj.entered_raffle:
+        obj.enter_raffle()
 
     # Due to socket blocking, this will only run when a resp is received
     if obj.entered_raffle:
@@ -137,7 +142,8 @@ def main():
       
       # Has it been 15min since the raffle began?
       # If so, reset for next raffle
-      if obj.elapsed_time > 900: # 15min
+      if obj.elapsed_time > 60: 
+      # if obj.elapsed_time > 900: # 15min
         obj.reset()
 
     obj.status()

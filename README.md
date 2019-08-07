@@ -14,6 +14,6 @@
 **Requires:** Twitch OAUTH Token for user, nickname of user, and channel name kept in a local_settings file
 
 
-This is very basic but future version will be rewritten as OO to account for different channel giveaways.
+*giveaway_bot.py* is the OO version. 
 
 **Status:** Refactoring into OO design

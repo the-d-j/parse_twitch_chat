@@ -83,7 +83,7 @@ def main():
 
     elif len(resp) > 0:
       username, channel, message = parse_message(resp)
-      print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
+      # print(f"Username: {username}\t Channel: {channel}\t Message: {message}\n")
 
       check_for_winner(username, message, CHANNEL, NICKNAME, RESPONSES)
 

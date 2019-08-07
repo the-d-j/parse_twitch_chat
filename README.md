@@ -16,4 +16,4 @@
 
 This is very basic but future version will be rewritten as OO to account for different channel giveaways.
 
-**Status:** Undergoing testing
+**Status:** Refactoring into OO design
